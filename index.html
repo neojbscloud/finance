@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>파워풀 카드 관리</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#E3F2FD">
+<link rel="manifest" href='data:application/manifest+json,{"name":"파워풀 카드 관리","short_name":"카드관리","start_url":".","display":"standalone","background_color":"#E3F2FD","theme_color":"#E3F2FD","orientation":"portrait"}'>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{
+    --bg-alpha:1;
+    --app-bg:#E3F2FD;
+    --comp-bg:#FFFFFF;
+    --text-main:#333333;
+    --text-sub:#666666;
+    --pp-blue-light:#64B5F6;
+    --pp-blue-main:#2196F3;
+    --pp-blue-dark:#0D47A1;
+    --pp-yellow-main:#FDD835;
+    --pp-yellow-dark:#F57F17;
+    --pp-red-light:#FF8A80;
+    --pp-red-main:#FF3D00;
+    --pp-red-dark:#D50000;
+    --rgb-input-blue:227,242,253;
+    --rgb-input-red:255,235,238;
+    --rgb-panel-base:255,255,255;
+    --table-cell-padding-x:1px;
+    --table-cell-padding-y:1px;
+    --checkbox-col-width:30px;
+    --wheel-height:270px;
+    --wheel-item-height:68px;
+    --input-height:28px;
+    --input-font-size-fixed:18px;
+    --app-fixed-width: 270px;
+    --app-left-margin: 22px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --app-bg:#121212;--comp-bg:#2C2C2C;--text-main:#E0E0E0;--text-sub:#AAAAAA;
+    --pp-blue-light:#42A5F5;--pp-blue-main:#64B5F6;--pp-blue-dark:#90CAF9;
+    --pp-red-light:#EF9A9A;--pp-red-main:#E57373;--pp-red-dark:#FFCDD2;
+    --rgb-input-blue:40,60,80;--rgb-input-red:80,40,40;--rgb-panel-base:30,30,30
+  }
+}
+*{touch-action:pan-y; box-sizing: border-box;}
+html,body{
+  font-family:"Jua",sans-serif;font-size:21.6px;margin:0;background-color:transparent;height:100%;
+  overflow:hidden;overscroll-behavior:none;display:flex;justify-content:flex-start;align-items:flex-start;
+  color:var(--text-main);-webkit-tap-highlight-color:transparent;user-select:none
+}
+input,textarea{user-select:text}
+::-webkit-scrollbar{width:4px;height:4px;display:block}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.1);border-radius:4px}
+
+#app-background{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;
+  background-color:var(--app-bg);
+  background-image:radial-gradient(var(--pp-blue-light) 2px,transparent 2px),radial-gradient(var(--pp-blue-light) 2px,transparent 2px);
+  background-size:24px 24px;background-position:0 0,12px 12px;background-repeat:repeat;
+  transition:background-image .3s ease,background-color .3s
+}
+
+#app-container{
+  width:var(--app-fixed-width);
+  min-width:var(--app-fixed-width);
+  max-width:var(--app-fixed-width);
+  margin-left:var(--app-left-margin);
+  margin-right:auto;
+  padding:40px 0 0 0;
+  background:transparent;
+  position:relative;z-index:1;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;
+  height:100%;overflow-y:hidden;overflow-x:hidden;
+  scrollbar-width:none;-ms-overflow-style:none;
+}
+#app-container::-webkit-scrollbar{display:none}
+
+.floating-btn-container{
+  position:fixed;right:20px;bottom:20%;display:flex;flex-direction:column;gap:12px;z-index:2000;
+  transition:opacity .3s ease,visibility .3s;opacity:1;visibility:visible;touch-action:none;cursor:grab
+}
+.floating-btn-container:active{cursor:grabbing}
+.floating-btn-container.hidden{opacity:0;visibility:hidden;pointer-events:none}
+
+.circle-btn{
+  width:38px;height:38px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:bold;line-height:1;background:var(--comp-bg);
+  box-shadow:0 4px 6px rgba(0,0,0,0.2),0 1px 3px rgba(0,0,0,0.1);
+  border:2px solid var(--pp-blue-dark);color:var(--pp-blue-dark);
+  cursor:pointer;transition:transform .1s,background .1s;user-select:none;-webkit-user-select:none;pointer-events:auto;
+}
+.circle-btn:hover{background:var(--app-bg);transform:translateY(-2px)}
+.circle-btn:active{box-shadow:0 2px 3px rgba(0,0,0,0.2);transform:translateY(1px)}
+.circle-btn.add{border-color:var(--pp-blue-main);color:var(--pp-blue-main)}
+.circle-btn.delete{border-color:var(--pp-red-main);color:var(--pp-red-main)}
+.circle-btn.delete:hover{background:rgba(255,235,238,0.5)}
+.circle-btn.save{border-color:#2E7D32;color:#2E7D32}
+.circle-btn.save:hover{background:rgba(232,245,233,0.5)}
+.circle-btn.settings{border-color:#616161;color:#616161}
+.circle-btn.settings:hover{background:rgba(245,245,245,0.5)}
+
+button.tiny-btn{
+  padding:4px 10px;font-size:14.4px;height:28px;line-height:1;border-width:2px;
+  box-shadow:0 2px 0 var(--pp-blue-dark);border-radius:14px;background:var(--comp-bg);
+  color:var(--text-main);border:2px solid var(--pp-blue-dark);
+  cursor:pointer;font-family:"Jua",sans-serif
+}
+button.tiny-btn:active{transform:translateY(2px);box-shadow:none}
+
+.view-panel{width:100%;background:transparent;border:none;box-shadow:none;box-sizing:border-box;position:relative;padding:0;overflow:visible;transition:opacity .2s;flex-shrink:0;display:none;height:100%}
+.view-panel.active{display:block}
+
+.center-panel{
+  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  width:100%;padding-top:0px;position:relative;max-width:100%;overflow:hidden;
+}
+.center-panel>.pp-box{width:100%; max-width:100%; box-sizing:border-box;}
+.pp-box{border-radius:18px;padding:10px 12px;position:relative;box-sizing:border-box;border:none;box-shadow:none;background-repeat:no-repeat}
+.theme-main{background:transparent;padding:0}
+.theme-red{
+  --box-line-color:var(--pp-red-main);
+  --box-bg-light:rgba(var(--rgb-input-red),calc(0.2 * var(--bg-alpha)));
+  --box-bg-dark:rgba(var(--rgb-input-red),calc(0.85 * var(--bg-alpha)));
+  padding:8px 12px;
+  background-image:linear-gradient(90deg,transparent,var(--box-line-color),transparent),
+                   linear-gradient(180deg,var(--box-bg-light) 0%,var(--box-bg-dark) 50%,var(--box-bg-light) 100%);
+  background-size:100% 2px,100% 100%;
+  background-position:bottom center,center
+}
+
+input[type="text"],select,textarea,.merged-input-box{border:none!important;box-shadow:none!important;border-radius:8px;transition:background .2s;color:var(--text-main)}
+.theme-blue input[type="text"],.theme-blue select,.theme-blue textarea{background:rgba(var(--rgb-input-blue),calc(0.65 * var(--bg-alpha)))!important}
+.theme-red input[type="text"],.theme-red select,.theme-red textarea,.theme-red .merged-input-box{background:rgba(var(--rgb-input-red),calc(0.65 * var(--bg-alpha)))!important}
+.theme-main input[type="text"]{background:rgba(var(--rgb-input-blue),calc(0.65 * var(--bg-alpha)))!important}
+input[type="text"]:focus,select:focus,textarea:focus,.merged-input-box:focus-within{background:rgba(var(--rgb-panel-base),calc(0.95 * var(--bg-alpha)))!important;outline:none}
+.pp-box input,.pp-box select,.pp-box textarea{font-family:"Jua",sans-serif;color:var(--text-main);font-size:var(--input-font-size-fixed)}
+
+.card-wheel-container{
+  position:relative;width:100%;height:var(--wheel-height);overflow-x:hidden;overflow-y:hidden;margin-bottom:14px;
+  mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);
+  -webkit-mask-image:linear-gradient(to bottom,transparent,black 15%,black 85%,transparent);
+  background-color:rgba(var(--rgb-input-blue),calc(0.9 * var(--bg-alpha)));
+  border-radius:14px;transition:filter .3s,opacity .3s;
+  background-image:linear-gradient(90deg,transparent,var(--pp-blue-light),transparent),
+                   linear-gradient(90deg,transparent,var(--pp-blue-light),transparent);
+  background-size:100% 3px,100% 3px;background-position:top center,bottom center;background-repeat:no-repeat;
+  box-sizing:border-box;
+}
+.card-wheel-scroll{
+  height:100%;overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;
+  scroll-snap-type:y mandatory;scroll-behavior:smooth;scrollbar-width:none;-ms-overflow-style:none;
+  padding:calc(var(--wheel-height) / 2 - var(--wheel-item-height) / 2) 0;box-sizing:border-box;
+  display:flex;flex-direction:column;width:100%;
+}
+.card-wheel-scroll::-webkit-scrollbar{display:none}
+
+.card-wheel-item{
+  height:var(--wheel-item-height);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  scroll-snap-align:center;font-size:1em;font-weight:normal;color:var(--text-main);
+  transition:opacity .2s;cursor:pointer;user-select:none;
+  text-shadow:-1px -1px 0 var(--comp-bg),1px -1px 0 var(--comp-bg),-1px 1px 0 var(--comp-bg),1px 1px 0 var(--comp-bg);
+  width:100%;box-sizing:border-box;gap:2px;white-space:nowrap;opacity:0.5;
+}
+.card-wheel-item.selected {opacity: 1;}
+
+.wheel-input-name{
+  background:transparent!important;border:none!important;text-align:center;font-family:"Jua",sans-serif;
+  font-size:1em;color:var(--text-main);padding:0 4px;margin:0;width:auto;min-width:90px;
+  max-width:100%;
+  text-shadow:inherit;cursor:text;transition:font-size 0.2s ease;
+}
+.card-wheel-item.selected .wheel-input-name {font-size: 1.2em; font-weight: bold;}
+.wheel-input-name:focus{outline:none;background:rgba(255,255,255,0.3)!important;border-radius:4px}
+
+.wheel-amount-row{
+  display:flex;align-items:baseline;justify-content:flex-end;width:100%;padding-right:45px;box-sizing:border-box;
+  opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap
+}
+.wheel-amount-row.visible{opacity:1;pointer-events:auto}
+.wheel-input-amount{
+  background:transparent!important;border:none!important;text-align:right;font-family:"Jua",sans-serif;font-size:1em;
+  color:var(--text-main);padding:0;margin:0;width:auto;min-width:36px;
+  max-width:160px;
+  text-shadow:inherit;
+}
+.wheel-amount-unit{
+  font-size:0.8em;margin-left:2px;flex-shrink:0;cursor:pointer;color:var(--pp-blue-main);
+  text-decoration:none;pointer-events:auto;vertical-align:baseline;
+}
+.wheel-amount-unit:hover{color:var(--pp-blue-dark)}
+
+.selection-box{
+  position:absolute;top:50%;left:0;right:0;margin:0 auto;transform:translateY(-50%);
+  width:100%;height:72px;background:rgba(255,235,59,0.1);pointer-events:none;z-index:10;border:none;
+  background-image:linear-gradient(90deg,transparent,var(--pp-yellow-main),transparent),
+                   linear-gradient(90deg,transparent,var(--pp-yellow-main),transparent);
+  background-size:100% 4px,100% 4px;background-position:top center,bottom center;background-repeat:no-repeat
+}
+
+.card-detail-panel{
+  margin-top:0;margin-bottom:14px;padding:14px;border-radius:18px;
+  background-image:linear-gradient(90deg,transparent,var(--pp-blue-light),transparent),
+                   linear-gradient(90deg,transparent,var(--pp-blue-light),transparent),
+                   linear-gradient(180deg,rgba(var(--rgb-input-blue),calc(0.4 * var(--bg-alpha))) 0%,
+                                     rgba(var(--rgb-input-blue),calc(0.8 * var(--bg-alpha))) 50%,
+                                     rgba(var(--rgb-input-blue),calc(0.4 * var(--bg-alpha))) 100%);
+  background-size:100% 2px,100% 2px,100% 100%;
+  background-position:top center,bottom center,center;background-repeat:no-repeat;
+  opacity:0;transform:translateY(-10px);
+  transition:opacity .4s ease,transform .4s ease,filter .3s,opacity .3s;
+  pointer-events:none;display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box
+}
+.card-detail-panel.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+.card-detail-panel.blurred{filter:blur(4px);opacity:0.6}
+
+.detail-row{display:flex;align-items:center;justify-content:flex-start;width:100%;}
+.detail-label{
+  font-weight:normal;font-size:1.1rem;
+  flex-shrink:0;min-width:81px;color:var(--pp-blue-dark);
+  background:rgba(var(--rgb-input-blue),0.8);padding:4px 7px;border-radius:9px;text-align:center;border:2px solid var(--pp-blue-main);
+  margin-right: 1em;
+  transition: color 0.2s, border-color 0.2s;
+}
+.detail-value-group {
+  display: flex; align-items: baseline; gap: 2px; flex: 1;
+}
+.detail-value-text {
+  font-size: 1.1rem;
+}
+.detail-unit {
+  font-size: 1.1rem;
+}
+.detail-date-sup {
+  opacity:0.7;font-size:0.7em;position:relative;top:-0.5em;margin-left:2px;
+}
+.detail-min-input {
+  font-size: 1.1rem !important;
+  text-align: left !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: auto;
+  min-width: 20px;
+  max-width: 100%;
+  color: inherit;
+}
+
+.tip-popup-window{
+  position:fixed;
+  z-index:1300;opacity:0;pointer-events:none;transition:opacity .2s ease;
+  box-sizing:border-box;
+  height:auto;
+  max-height:170px;
+  overflow-y:auto;
+  background-color:rgba(var(--rgb-input-blue),0.95);border-radius:18px;padding:0;
+  box-shadow:0 9px 22px rgba(0,0,0,0.2);border:none;
+  background-image:linear-gradient(90deg,transparent,var(--pp-blue-light),transparent),
+                   linear-gradient(90deg,transparent,var(--pp-blue-light),transparent);
+  background-size:100% 3px,100% 3px;background-position:top center,bottom center;background-repeat:no-repeat;
+  white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;font-size:0.95em;line-height:1.4;
+  text-align:left;color:var(--text-main);touch-action:pan-y
+}
+.tip-popup-window.active{opacity:1;pointer-events:auto}
+.tip-textarea{
+  width:100%;height:100%;background:transparent!important;border:none!important;resize:none;
+  padding:14px;box-sizing:border-box;font-family:"Jua",sans-serif;font-size:1em;color:var(--text-main);
+  overflow-y:auto;display:block;white-space:pre-wrap;word-break:break-word
+}
+.tip-textarea:focus{outline:none}
+
+.ticker-panel{
+  width:100%;height:72px;margin-top:14px;position:relative;overflow:hidden;
+  background-image:linear-gradient(90deg,transparent,var(--pp-blue-light),transparent),
+                   linear-gradient(90deg,transparent,var(--pp-blue-light),transparent);
+  background-size:100% 2px,100% 2px;background-position:top center,bottom center;background-repeat:no-repeat;
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+  background-color:rgba(var(--rgb-input-blue),calc(0.3 * var(--bg-alpha)));border-radius:14px;touch-action:pan-y;
+  transition: filter 0.3s, opacity 0.3s;
+}
+.ticker-panel.blurred { filter: blur(4px); opacity: 0.6; }
+
+.ticker-content{width:100%;height:100%;position:relative}
+.ticker-item{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  opacity:0;transform:translateX(45px);transition:opacity .5s ease,transform .5s ease;pointer-events:none
+}
+.ticker-item.active{opacity:1;transform:translateX(0);pointer-events:auto}
+.ticker-item.exit{opacity:0;transform:translateX(-45px)}
+.t-card-name{font-size:0.9em;color:var(--pp-blue-dark);font-weight:bold;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:90%}
+.t-note-text{font-size:0.95em;color:var(--pp-red-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:95%}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;
+  justify-content:flex-start;
+  align-items:flex-start;
+  padding-left:var(--app-left-margin);
+  z-index:1100;pointer-events:auto;backdrop-filter:blur(2px)
+}
+.modal-dialog{
+  width:var(--app-fixed-width) !important;
+  max-width:var(--app-fixed-width) !important;
+  height:auto;
+  background:rgba(var(--rgb-panel-base),var(--bg-alpha));
+  border:none;
+  border-top:5px solid transparent;
+  border-bottom:5px solid transparent;
+  border-image:linear-gradient(to right, var(--pp-blue-light), var(--pp-blue-dark), var(--pp-blue-light)) 1;
+  border-radius:0;box-shadow:0 9px 36px rgba(0,0,0,0.3);
+  padding:0;
+  box-sizing:border-box;pointer-events:auto;position:relative;transition:background .2s;
+  margin:0;
+}
+
+#settings-dialog {
+  border: none !important;
+  border-image: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.settings-section{
+  margin: 0 0 8px 0;
+  padding: 8px 0;
+  background: rgba(var(--rgb-panel-base),var(--bg-alpha));
+  border: none;
+  border-radius: 0;
+  background-image: linear-gradient(90deg,transparent,var(--pp-blue-light),transparent),
+                    linear-gradient(90deg,transparent,var(--pp-blue-light),transparent);
+  background-size: 100% 2px, 100% 2px;
+  background-position: top center, bottom center;
+  background-repeat: no-repeat;
+}
+
+.settings-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;padding-bottom:4px; border-bottom:none;}
+.settings-header h4{margin:0;color:var(--pp-blue-dark);font-size:1.1em; padding-left: 10px;}
+.settings-header-btns{display:flex;gap:9px;align-items:center; padding-right: 10px;}
+.settings-row.opacity-row{display:flex;align-items:center;gap:12px;white-space:nowrap; padding: 0 10px;}
+.settings-row.opacity-row label{color:var(--text-main);margin-right:7px}
+.settings-row.opacity-row input[type=range]{flex:1;min-width:126px}
+.file-input-wrapper{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;padding:4px}
+.file-input-wrapper input[type=file]{font-size:90px;position:absolute;left:0;top:0;opacity:0;cursor:pointer;width:100%;height:100%}
+button.small-btn{padding:4px 10px;font-size:14.4px;border-radius:14px;margin:0}
+.settings-desc{font-size:0.85em;color:var(--text-sub);margin-top:2px;margin-bottom:2px; padding: 0 10px;}
+
+#inline-confirm-pop{position:fixed;z-index:2500;display:none;min-width:252px;max-width:360px;background:var(--comp-bg);color:var(--text-main);border:4px solid var(--pp-blue-dark);border-radius:18px;box-shadow:7px 7px 0 rgba(0,0,0,0.3);padding:18px;box-sizing:border-box;font-family:"Jua",sans-serif}
+#inline-confirm-pop .msg{font-size:1em;line-height:1.4;margin-bottom:16px;white-space:pre-wrap}
+#inline-confirm-pop .btns{display:flex;justify-content:flex-end;gap:10px}
+
+table{width:100%;border-collapse:separate;border-spacing:0 2px;margin:0;table-layout:auto}
+table th,table td{border:none;padding:var(--table-cell-padding-y) var(--table-cell-padding-x);vertical-align:middle;box-sizing:border-box;white-space:nowrap;background:transparent}
+table thead th{
+  background:rgba(235,235,235,1);text-align:center;color:var(--pp-red-dark);
+  font-size:0.85em;
+  padding:4px 2px;
+  position:sticky;top:0;z-index:20;background-image:linear-gradient(90deg,transparent,var(--pp-red-main),transparent);
+  background-size:100% 3px;background-position:top center;background-repeat:no-repeat
+}
+table thead th::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,transparent,var(--pp-red-main),transparent)}
+#fixed-costs-table th:first-child,#fixed-costs-table td:first-child{
+  position:sticky;left:0;z-index:15;background:rgba(235,235,235,1);
+  width:var(--checkbox-col-width);min-width:var(--checkbox-col-width);max-width:var(--checkbox-col-width);
+  padding-left:2px;padding-right:2px;text-align:center;border-right:1px solid rgba(0,0,0,0.05);
+}
+#fixed-costs-table thead th:first-child{z-index:30}
+#fixed-costs-table th:last-child,#fixed-costs-table td:last-child{
+  position:sticky;right:0;z-index:15;background:rgba(235,235,235,1);
+  width:var(--checkbox-col-width);min-width:var(--checkbox-col-width);max-width:var(--checkbox-col-width);
+  padding-left:2px;padding-right:2px;text-align:center;border-left:1px solid rgba(0,0,0,0.05);
+}
+#fixed-costs-table thead th:last-child{z-index:30}
+#fixed-costs-table input[type="text"],#fixed-costs-table select,#fixed-costs-table textarea{height:var(--input-height);vertical-align:middle}
+
+.table-scroll{
+  margin:0;border:none;border-radius:0;
+  overflow-x:auto;overflow-y:auto;
+  width:100%;
+  max-height:185px;
+  background:transparent;position:relative;touch-action:auto!important;cursor:grab
+}
+.table-scroll *{touch-action:auto!important}
+.table-scroll:active{cursor:grabbing}
+
+#fixed-costs-table td:nth-child(4) {text-align: right !important;}
+#fixed-costs-table td:nth-child(4) input {text-align: right !important;}
+
+#fixed-costs-table input[type="text"], #fixed-costs-table select, #fixed-costs-table textarea {
+    font-size: calc(var(--input-font-size-fixed) * 0.9) !important;
+}
+
+select.filter-sort-dropdown{
+  width:auto;padding:2px 7px;color:var(--pp-red-dark);cursor:pointer;font-family:"Jua",sans-serif;
+  font-size:0.85em;height:var(--input-height);background:transparent;position:relative;z-index:50;pointer-events:auto
+}
+.merged-input-box{display:inline-flex;align-items:center;justify-content:center;height:var(--input-height);box-sizing:border-box;min-width:72px;padding:0 2px}
+.merged-input-box input[type="text"]{background:transparent!important;padding:0!important;height:100%;margin:0}
+.item-name{text-align:right!important}
+.item-sub-name{text-align:left!important}
+#fixed-costs-table .item-special-notes{
+  font-family:"Jua",sans-serif;line-height:1.2;white-space:pre;overflow-wrap:normal;word-break:normal;
+  display:inline-block;width:auto;min-width:72px;height:var(--input-height);min-height:var(--input-height);
+  resize:none;overflow:hidden;box-sizing:border-box;padding:4px 2px;vertical-align:middle;margin:0
+}
+#fixed-costs-table thead th .header-select-wrap{display:flex;justify-content:center;align-items:center;position:relative;z-index:50}
+#qc-card-name {font-size:14.4px; font-weight:bold; color:var(--pp-blue-dark); padding:4px 10px;}
+
+.arcade-header { padding: 5px 10px; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; }
+.arcade-header h3 { font-size: 0.8em; }
+
+.auto-fit-input { max-width: 100% !important; }
+</style>
+</head>
+<body>
+<div id="app-background"></div>
+
+<div class="floating-btn-container">
+  <button id="btn-open-settings" class="circle-btn settings" type="button" title="설정">⚙️</button>
+  <button id="save-data" class="circle-btn save" type="button" title="저장">💾</button>
+  <button id="fab-add" class="circle-btn add" type="button" title="추가">+</button>
+  <button id="fab-delete" class="circle-btn delete" type="button" title="삭제">-</button>
+</div>
+
+<div id="app-container" aria-live="polite">
+  <div id="view-main" class="view-panel active">
+    <div class="center-panel">
+      <div class="pp-box theme-main" style="position:relative;">
+
+        <div id="card-detail-panel" class="card-detail-panel">
+          <div class="detail-row" id="detail-row-1">
+            <div class="detail-label" id="detail-amount-label">사용 금액</div>
+            <div class="detail-value-group">
+              <span id="detail-payment-amount" class="detail-value-text">0</span>
+              <span class="detail-unit">원</span>
+              <sup id="detail-payment-date" class="detail-date-sup"></sup>
+            </div>
+          </div>
+          <div class="detail-row" style="margin-top:10px;">
+            <div class="detail-label">기준 금액</div>
+            <div class="detail-value-group">
+              <input type="text" class="detail-min-input" value="0" inputmode="numeric" pattern="[0-9]*" />
+              <span class="detail-unit" style="color:inherit;">원</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-wheel-container" id="wheel-container">
+          <div class="selection-box"></div>
+          <div class="card-wheel-scroll" id="card-wheel-scroll"><div id="card-wheel-content"></div></div>
+        </div>
+
+        <div id="special-note-tip" class="tip-popup-window"></div>
+        <div id="main-benefit-tip" class="tip-popup-window"></div>
+
+        <div id="ticker-panel" class="ticker-panel">
+          <div id="ticker-content" class="ticker-content"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status-tooltip" style="display:none;"></div>
+
+<div id="settings-overlay" class="modal-overlay" style="padding-top:40px;">
+  <div id="settings-dialog" class="modal-dialog">
+    <div class="settings-section">
+      <div class="settings-header">
+        <h4>배경 설정</h4>
+        <div class="file-input-wrapper">
+          <button type="button" class="small-btn">파일 선택</button>
+          <input type="file" id="bg-image-input" accept="image/*">
+        </div>
+      </div>
+      <div class="settings-row opacity-row">
+        <label>투명도</label>
+        <input type="range" id="bg-opacity-slider" min="0" max="100" value="0">
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-header">
+        <h4>브라우저 데이터</h4>
+        <div class="settings-header-btns"><button id="load-data" type="button" class="small-btn">불러오기</button></div>
+      </div>
+      <div class="settings-desc">브라우저에 저장된 데이터를 불러옵니다.</div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-header">
+        <h4>파일 백업</h4>
+        <div class="settings-header-btns">
+          <button id="btn-export-file" type="button" class="small-btn primary">저장</button>
+          <div class="file-input-wrapper">
+            <button type="button" class="small-btn">열기</button>
+            <input type="file" id="btn-import-file" accept=".json">
+          </div>
+        </div>
+      </div>
+      <div class="settings-desc">데이터를 파일로 저장하거나 불러옵니다.</div>
+    </div>
+  </div>
+</div>
+
+<div id="quick-check-overlay" class="modal-overlay">
+  <div id="quick-check-dialog" class="modal-dialog">
+    <div class="arcade-header">
+      <h3 style="margin:0;">기본 생활비</h3>
+      <div class="arcade-header-btns"><span id="qc-card-name"></span></div>
+    </div>
+    <div class="pp-box theme-red" style="padding: 0 2px;">
+      <div class="table-scroll" id="fixed-costs-scroll" aria-label="고정 지출 테이블 스크롤">
+        <table id="fixed-costs-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th><div class="header-select-wrap"><select id="fixed-cost-filter-sort" class="filter-sort-dropdown" aria-label="카드 필터"></select></div></th>
+              <th>사용처</th>
+              <th>지출 (원)</th>
+              <th>특이 사항</th>
+              <th>지불</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="inline-confirm-pop" role="dialog" aria-modal="false" aria-label="삭제 확인">
+  <div class="msg" id="inline-confirm-msg"></div>
+  <div class="btns">
+    <button type="button" id="inline-confirm-cancel">취소</button>
+    <button type="button" class="ok" id="inline-confirm-ok">확인</button>
+  </div>
+</div>
+
+<script>
+let cards=[],nextCardId=1,fixedCostItems=[],nextItemId=1,currentFixedCostFilter='all',isDirty=false;
+
+function generateCardId(){return `card-${nextCardId++}`}
+function generateItemId(){return `item-${nextItemId++}`}
+function formatNumberInput(el){
+  let t=el.value.replace(/[^0-9]/g,'');
+  if(t===''){el.value='';return}
+  let n=parseInt(t,10);
+  el.value=isNaN(n)?'':n.toLocaleString('ko-KR');
+}
+function parseNumberFromFormattedString(s){if(!s)return 0;return parseFloat(String(s).replace(/,/g,''))||0}
+function formatMD(d=new Date){return `${d.getMonth()+1}/${d.getDate()}`}
+function formatKRWNumber(n){return (Number(n)||0).toLocaleString('ko-KR')}
+
+const _measureCanvas=document.createElement('canvas'),_measureCtx=_measureCanvas.getContext('2d');
+function measureTextWidth(text,font){_measureCtx.font=font;return _measureCtx.measureText(text).width}
+function getFontShorthandFromEl(el){const t=getComputedStyle(el);return `${t.fontStyle} ${t.fontVariant} ${t.fontWeight} ${t.fontSize} / ${t.lineHeight} ${t.fontFamily}`}
+function autoFitInputWidth(el,{minW=20,maxW=1200,extra=2}={}){
+  if(!el) return 0;
+  const r=getComputedStyle(el), font=getFontShorthandFromEl(el),
+        val=el.value||el.placeholder||'',
+        pl=parseFloat(r.paddingLeft||'0')||0, pr=parseFloat(r.paddingRight||'0')||0,
+        w=measureTextWidth(val,font);
+  const d=Math.min(maxW,Math.max(minW,Math.ceil(w+pl+pr+extra)));
+  el.style.width=d+'px';
+  return d;
+}
+function setTextareaAutoFit(el,opt={}){
+  if(!el) return;
+  if(el.dataset.autofitBound==='1') return;
+  el.dataset.autofitBound='1';
+  const fn=()=>{
+    const o=getFontShorthandFromEl(el), val=el.value||el.placeholder||'';
+    const longest=val.split('\n').reduce((a,b)=>b.length>a.length?b:a,'');
+    const cs=getComputedStyle(el), pl=parseFloat(cs.paddingLeft||'0')||0, pr=parseFloat(cs.paddingRight||'0')||0;
+    const minW=opt.minW??54, maxW=opt.maxW??2400, extraW=opt.extraW??16, minH=opt.minH??20;
+    const w=Math.min(maxW,Math.max(minW,Math.ceil(measureTextWidth(longest,o)+pl+pr+extraW)));
+    el.style.width=w+'px';
+    el.style.height='auto';
+    el.style.height=Math.max(minH,el.scrollHeight)+'px';
+  };
+  fn();
+  el.addEventListener('input',fn);
+  el.addEventListener('change',fn);
+  el.addEventListener('blur',fn);
+  window.addEventListener('resize',fn);
+}
+
+const wheelContainerEl=document.getElementById('wheel-container');
+const detailPanelEl=document.getElementById('card-detail-panel');
+const mainBenefitTipEl=document.getElementById('main-benefit-tip');
+const wheelScroll=document.getElementById('card-wheel-scroll');
+const wheelContent=document.getElementById('card-wheel-content');
+const detailPaymentAmount=document.getElementById('detail-payment-amount');
+const detailPaymentDate=document.getElementById('detail-payment-date');
+const detailAmountLabel=document.getElementById('detail-amount-label');
+const tickerPanel=document.getElementById('ticker-panel');
+
+let currentSelectedCardIndex=0,wheelScrollTimeout=null;
+const ITEM_HEIGHT=68;
+
+let activeTip=null, tipHideTimeout=null, autoSaveTimeout=null;
+
+function calculateCurrentCardSums(){
+  const sums={};
+  cards.forEach(c => {
+    sums[c.id] = c.individualPaymentTotalSpend || 0;
+  });
+  fixedCostItems.forEach(it => {
+    if(it.cardId && sums[it.cardId] !== undefined && !it.isPaid){
+      sums[it.cardId] += (it.amount || 0);
+    }
+  });
+  return sums;
+}
+
+function updateAllCardResults(){
+  const sums = calculateCurrentCardSums();
+  cards.forEach(c => {
+    c.individualPaymentAmount = sums[c.id] || 0;
+  });
+
+  if(cards[currentSelectedCardIndex]) updateDetailPanel(cards[currentSelectedCardIndex].id);
+  renderTicker();
+}
+
+function saveFixedCostData(){
+  const data={cards:JSON.parse(JSON.stringify(cards)),fixedCosts:JSON.parse(JSON.stringify(fixedCostItems)),nextCardId,nextItemId};
+  localStorage.setItem('cardUsageData',JSON.stringify(data));
+  updateAllCardResults();
+  isDirty=false;
+}
+
+function getSelectionBoxBottom(){
+  const selBox = document.querySelector('.selection-box');
+  if(!selBox) return 0;
+  const rect = selBox.getBoundingClientRect();
+  return rect.bottom;
+}
+
+function showMainBenefitTip(cardItem){
+  clearTimeout(tipHideTimeout);
+  activeTip='benefit';
+  mainBenefitTipEl.innerHTML=`<textarea class="tip-textarea" id="tip-edit-textarea" rows="1"></textarea>`;
+  const ta=document.getElementById('tip-edit-textarea');
+  ta.value=(cardItem.mainBenefit||'').trim();
+  
+  const resize=()=>{
+    ta.style.height='auto'; 
+    ta.style.height=ta.scrollHeight+'px';
+  };
+  
+  ta.addEventListener('input',(ev)=>{
+    cardItem.mainBenefit=ev.target.value;
+    resize();
+    isDirty=true;
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout=setTimeout(saveFixedCostData,1000);
+  });
+  ta.addEventListener('blur',()=>{ if(isDirty) saveFixedCostData(); });
+  ta.addEventListener('mousedown',e=>e.stopPropagation());
+  ta.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+  resize();
+
+  mainBenefitTipEl.classList.add('active');
+  
+  const topPos = getSelectionBoxBottom();
+  const appRect = document.getElementById('app-container').getBoundingClientRect();
+  
+  mainBenefitTipEl.style.top = topPos + 'px';
+  mainBenefitTipEl.style.left = appRect.left + 'px';
+  mainBenefitTipEl.style.width = appRect.width + 'px';
+  
+  detailPanelEl.classList.add('blurred');
+  tickerPanel.classList.add('blurred');
+}
+
+function hideMainBenefitTip(){
+  tipHideTimeout=setTimeout(()=>{
+    mainBenefitTipEl.classList.remove('active');
+    detailPanelEl.classList.remove('blurred');
+    tickerPanel.classList.remove('blurred');
+    activeTip=null;
+    if(isDirty) saveFixedCostData();
+  },150);
+}
+
+document.addEventListener('mousedown',(e)=>{
+  if(activeTip==='benefit' && !mainBenefitTipEl.contains(e.target) && !e.target.closest('.card-wheel-item')){
+    hideMainBenefitTip();
+  }
+});
+document.addEventListener('touchstart',(e)=>{
+  if(activeTip==='benefit' && !mainBenefitTipEl.contains(e.target) && !e.target.closest('.card-wheel-item')){
+    hideMainBenefitTip();
+  }
+},{passive:true});
+
+function updateWheelVisuals(){
+  const center=wheelScroll.scrollTop+wheelScroll.clientHeight/2;
+  const children=wheelContent.children;
+  for(const el of children){
+    const mid=el.offsetTop+el.offsetHeight/2;
+    const d=Math.abs(center-mid);
+    if(d<34) el.classList.add('selected');
+    else el.classList.remove('selected');
+  }
+}
+function updateWheelSelection(){
+  const t=Math.round(wheelScroll.scrollTop/ITEM_HEIGHT);
+  const n=wheelContent.children;
+  document.querySelectorAll('.wheel-amount-row').forEach(x=>x.classList.remove('visible'));
+  if(n[t]){
+    currentSelectedCardIndex=parseInt(n[t].dataset.realIndex,10);
+    n[t].querySelector('.wheel-amount-row')?.classList.add('visible');
+  }
+}
+
+wheelScroll.addEventListener('scroll',()=>{
+  detailPanelEl.classList.remove('visible');
+  requestAnimationFrame(updateWheelVisuals);
+  clearTimeout(wheelScrollTimeout);
+  wheelScrollTimeout=setTimeout(()=>{
+    updateWheelSelection();
+    if(cards[currentSelectedCardIndex]){
+      updateDetailPanel(cards[currentSelectedCardIndex].id);
+      detailPanelEl.classList.add('visible');
+    }
+  },100);
+});
+
+function updateDetailPanel(cardId){
+  const c=cards.find(x=>x.id===cardId);
+  if(!c) return;
+  detailPaymentDate.textContent=c.individualPaymentDate||'';
+
+  const sum=calculateCurrentCardSums()[c.id]||0;
+  const min=c.minAmount||0;
+  
+  const amountEl = document.getElementById('detail-payment-amount');
+  const labelEl = document.getElementById('detail-amount-label');
+  const minInput = document.querySelector('.detail-min-input');
+  const row1 = document.getElementById('detail-row-1');
+
+  let color = '';
+  if(sum>=min){
+    labelEl.textContent="초과 금액";
+    amountEl.textContent=formatKRWNumber(sum-min);
+    color = '#2E7D32';
+  }else{
+    labelEl.textContent="부족 금액";
+    amountEl.textContent=formatKRWNumber(min-sum);
+    color = '#D32F2F';
+  }
+  
+  row1.style.color = color;
+  labelEl.style.borderColor = color;
+  labelEl.style.color = color;
+
+  if(minInput){
+    minInput.value = formatKRWNumber(min);
+    autoFitInputWidth(minInput,{minW:20,maxW:150,extra:4});
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const minInput = document.querySelector('.detail-min-input');
+    if(minInput) {
+        minInput.addEventListener('input', (ev) => {
+            formatNumberInput(ev.target);
+            const c = cards[currentSelectedCardIndex];
+            if(c) {
+                c.minAmount = parseNumberFromFormattedString(ev.target.value);
+                autoFitInputWidth(ev.target, {minW:20, maxW:150, extra:4});
+                isDirty = true;
+                updateDetailPanel(c.id);
+            }
+        });
+        minInput.addEventListener('blur', () => updateAllCardResults());
+        minInput.addEventListener('click', (ev) => ev.stopPropagation());
+    }
+});
+
+
+function renderCardWheel(){
+  wheelContent.innerHTML='';
+  if(cards.length===0){
+    wheelContent.innerHTML='<div style="text-align:center; padding:20px; opacity:0.5;">카드가 없습니다</div>';
+    detailPanelEl.classList.remove('visible');
+    return;
+  }
+  for(let loop=0; loop<20; loop++){
+    cards.forEach((card,idx)=>{
+      const item=document.createElement('div');
+      item.className='card-wheel-item';
+      item.dataset.realIndex=idx;
+
+      const name=document.createElement('input');
+      name.type='text';
+      name.className='wheel-input-name';
+      name.value=card.name;
+      name.dataset.cardId=card.id;
+
+      name.addEventListener('input',(ev)=>{
+        card.name=ev.target.value;
+        document.querySelectorAll(`.wheel-input-name[data-card-id="${card.id}"]`).forEach(inp=>{
+          inp.value=card.name;
+          autoFitInputWidth(inp,{minW:90,maxW:280,extra:30});
+        });
+        updateFilterSortDropdowns();
+        isDirty=true;
+      });
+
+      const amountRow=document.createElement('div');
+      amountRow.className='wheel-amount-row';
+
+      const amount=document.createElement('input');
+      amount.type='text';
+      amount.className='wheel-input-amount';
+      amount.value=formatKRWNumber(card.individualPaymentTotalSpend||0);
+      amount.dataset.cardId=card.id;
+      amount.inputMode='numeric';
+      amount.addEventListener('input',(ev)=>{
+        formatNumberInput(ev.target);
+        const n=parseNumberFromFormattedString(ev.target.value);
+        card.individualPaymentTotalSpend=n;
+        document.querySelectorAll(`.wheel-input-amount[data-card-id="${card.id}"]`).forEach(inp=>{
+          inp.value=formatKRWNumber(n);
+          autoFitInputWidth(inp,{minW:36,maxW:160,extra:4});
+        });
+        updateAllCardResults();
+        isDirty=true;
+      });
+      amount.addEventListener('blur',()=>{
+        card.individualPaymentDate=formatMD(new Date());
+        updateDetailPanel(card.id);
+      });
+
+      const unit=document.createElement('span');
+      unit.className='wheel-amount-unit';
+      unit.textContent='원';
+      unit.addEventListener('click',(ev)=>{
+        ev.stopPropagation();
+        openFixedCostManagerModal(card.id);
+      });
+
+      amountRow.appendChild(amount);
+      amountRow.appendChild(unit);
+
+      item.appendChild(name);
+      item.appendChild(amountRow);
+
+      item.addEventListener('click',(ev)=>{
+        if(ev.target===name || ev.target===amount || ev.target===unit) return;
+        if(parseInt(item.dataset.realIndex,10)===currentSelectedCardIndex){
+          showMainBenefitTip(card);
+        }
+      });
+
+      wheelContent.appendChild(item);
+    });
+  }
+
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.wheel-input-name').forEach(e=>autoFitInputWidth(e,{minW:90,maxW:280,extra:30}));
+    document.querySelectorAll('.wheel-input-amount').forEach(e=>autoFitInputWidth(e,{minW:36,maxW:160,extra:4}));
+    updateWheelVisuals();
+  });
+
+  const total=20*cards.length;
+  const mid=Math.floor(total/2);
+  const pos=mid-mid%cards.length+currentSelectedCardIndex;
+  wheelScroll.scrollTop=pos*ITEM_HEIGHT;
+  updateWheelSelection();
+  updateFilterSortDropdowns();
+}
+
+function updateFilterSortDropdowns(){
+  const sel=document.getElementById('fixed-cost-filter-sort');
+  if(!sel) return;
+  const cur=sel.value;
+  let html=`<option value="all" ${cur==='all'?'selected':''}>전체 보기</option>`;
+  cards.forEach(c=>{ html+=`<option value="${c.id}" ${cur===c.id?'selected':''}>${c.name}</option>`; });
+  sel.innerHTML=html;
+}
+
+let tickerInterval=null, tickerItems=[], currentTickerIndex=0;
+function renderTicker(){
+  const el=document.getElementById('ticker-content');
+  el.innerHTML='';
+  tickerItems=[];
+  cards.forEach(c=>{
+    fixedCostItems.filter(it=>it.cardId===c.id && it.specialNotes && it.specialNotes.trim()!=='').forEach(it=>{
+      tickerItems.push({cardName:c.name,noteText:`${it.name}${it.subName?' '+it.subName:''}: ${it.specialNotes}`});
+    });
+  });
+  if(tickerItems.length===0){
+    el.innerHTML='<div class="ticker-item active"><div class="t-card-name" style="opacity:0.5;">-</div><div class="t-note-text" style="opacity:0.5; color:var(--text-sub);">특이사항 없음</div></div>';
+    clearInterval(tickerInterval);
+    return;
+  }
+  tickerItems.forEach((t,i)=>{
+    const div=document.createElement('div');
+    div.className=`ticker-item ${i===0?'active':''}`;
+    div.innerHTML=`<div class="t-card-name">${t.cardName}</div><div class="t-note-text">${t.noteText}</div>`;
+    el.appendChild(div);
+  });
+  currentTickerIndex=0;
+  startTicker();
+}
+function startTicker(){
+  clearInterval(tickerInterval);
+  if(tickerItems.length<=1) return;
+  tickerInterval=setInterval(()=>nextTickerItem(),3000);
+}
+function nextTickerItem(){
+  const items=document.querySelectorAll('.ticker-item');
+  const cur=items[currentTickerIndex];
+  currentTickerIndex=(currentTickerIndex+1)%items.length;
+  const nxt=items[currentTickerIndex];
+  cur.classList.remove('active');
+  cur.classList.add('exit');
+  setTimeout(()=>cur.classList.remove('exit'),500);
+  nxt.classList.add('active');
+}
+function prevTickerItem(){
+  const items=document.querySelectorAll('.ticker-item');
+  const cur=items[currentTickerIndex];
+  currentTickerIndex=(currentTickerIndex-1+items.length)%items.length;
+  const nxt=items[currentTickerIndex];
+  cur.classList.remove('active');
+  cur.classList.add('exit');
+  setTimeout(()=>cur.classList.remove('exit'),500);
+  nxt.classList.add('active');
+}
+
+let tickerStartX=0;
+tickerPanel.addEventListener('touchstart',e=>{tickerStartX=e.changedTouches[0].screenX;clearInterval(tickerInterval)},{passive:true});
+tickerPanel.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].screenX-tickerStartX;
+  if(Math.abs(dx)>30) dx>0?prevTickerItem():nextTickerItem();
+  startTicker();
+},{passive:true});
+tickerPanel.addEventListener('mousedown',e=>{tickerStartX=e.screenX;clearInterval(tickerInterval)});
+tickerPanel.addEventListener('mouseup',e=>{
+  const dx=e.screenX-tickerStartX;
+  if(Math.abs(dx)>30) dx>0?prevTickerItem():nextTickerItem();
+  startTicker();
+});
+
+const settingsOverlay=document.getElementById('settings-overlay');
+const btnOpenSettings=document.getElementById('btn-open-settings');
+const bgImageInput=document.getElementById('bg-image-input');
+const bgOpacitySlider=document.getElementById('bg-opacity-slider');
+const appBackground=document.getElementById('app-background');
+const btnExportFile=document.getElementById('btn-export-file');
+const btnImportFile=document.getElementById('btn-import-file');
+
+btnOpenSettings.addEventListener('click',()=>{ 
+  if(isFabDragging) return; 
+  
+  const ticker = document.getElementById('ticker-panel');
+  const dialog = document.getElementById('settings-dialog');
+  
+  if(ticker && dialog) {
+    const tickerRect = ticker.getBoundingClientRect();
+    const bottomGap = window.innerHeight - tickerRect.bottom;
+    
+    dialog.style.position = 'absolute';
+    dialog.style.bottom = Math.max(20, bottomGap) + 'px';
+    dialog.style.left = tickerRect.left + 'px';
+  }
+  
+  settingsOverlay.style.display='block';
+  
+  detailPanelEl.classList.add('blurred');
+  wheelContainerEl.classList.add('blurred');
+  tickerPanel.classList.add('blurred');
+});
+
+settingsOverlay.addEventListener('mousedown',e=>{ 
+  if(e.target===settingsOverlay) {
+    settingsOverlay.style.display='none';
+    detailPanelEl.classList.remove('blurred');
+    wheelContainerEl.classList.remove('blurred');
+    tickerPanel.classList.remove('blurred');
+  }
+});
+
+bgImageInput.addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const fr=new FileReader();
+  fr.onload=ev=>{
+    const dataUrl=ev.target.result;
+    appBackground.style.backgroundImage=`url('${dataUrl}')`;
+    appBackground.style.backgroundSize='cover';
+    appBackground.style.backgroundRepeat='no-repeat';
+    appBackground.style.backgroundPosition='center';
+    localStorage.setItem('customBgImage',dataUrl);
+  };
+  fr.readAsDataURL(file);
+});
+bgOpacitySlider.addEventListener('input',e=>{
+  const v=parseInt(e.target.value,10);
+  const a=1-v/100;
+  document.documentElement.style.setProperty('--bg-alpha',a);
+  localStorage.setItem('customBgOpacity',v);
+});
+
+btnExportFile.addEventListener('click',()=>{
+  const data={cards,fixedCosts:fixedCostItems,nextCardId,nextItemId,exportDate:(new Date).toISOString()};
+  const href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(data,null,2));
+  const a=document.createElement('a');
+  a.setAttribute('href',href);
+  a.setAttribute('download','card_manager_backup.json');
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+});
+btnImportFile.addEventListener('change',e=>{
+  const file=e.target.files[0];
+  if(!file) return;
+  const fr=new FileReader();
+  fr.onload=ev=>{
+    processLoadedData(ev.target.result,false);
+    e.target.value='';
+    settingsOverlay.style.display='none';
+    detailPanelEl.classList.remove('blurred');
+    wheelContainerEl.classList.remove('blurred');
+    tickerPanel.classList.remove('blurred');
+  };
+  fr.readAsText(file);
+});
+
+function loadCustomSettings(){
+  const img=localStorage.getItem('customBgImage');
+  const op=localStorage.getItem('customBgOpacity');
+  if(img){
+    appBackground.style.backgroundImage=`url('${img}')`;
+    appBackground.style.backgroundSize='cover';
+    appBackground.style.backgroundRepeat='no-repeat';
+    appBackground.style.backgroundPosition='center';
+  }
+  if(op!==null){
+    bgOpacitySlider.value=parseInt(op,10);
+    document.documentElement.style.setProperty('--bg-alpha',1-parseInt(op,10)/100);
+  }
+}
+
+document.getElementById('save-data').addEventListener('click',()=>{
+  if(isFabDragging) return;
+  saveFixedCostData();
+  alert('브라우저에 저장되었습니다.');
+});
+
+document.getElementById('load-data').addEventListener('click',()=>loadData(false));
+
+function loadData(silent=true){
+  const raw=localStorage.getItem('cardUsageData');
+  if(!raw){ if(!silent) alert('저장된 데이터가 없습니다.'); return; }
+  processLoadedData(raw,silent);
+}
+function processLoadedData(raw,silent){
+  let data=null;
+  try{ data=JSON.parse(raw); }catch(e){ if(!silent) alert('데이터 형식이 올바르지 않습니다.'); return; }
+
+  cards=Array.isArray(data.cards)?data.cards.filter(Boolean):[];
+  fixedCostItems=Array.isArray(data.fixedCosts)?data.fixedCosts.filter(Boolean):[];
+
+  const maxNum=(arr)=>arr.reduce((m,x)=>{
+    if(!x||!x.id) return m;
+    const n=parseInt(String(x.id).replace(/[^0-9]/g,''),10)||0;
+    return Math.max(m,n);
+  },0);
+  nextCardId=maxNum(cards)+1;
+  nextItemId=maxNum(fixedCostItems)+1;
+
+  cards.forEach(c=>{
+    if(c.mainBenefit===undefined) c.mainBenefit='';
+    if(c.individualPaymentAmount===undefined) c.individualPaymentAmount=0;
+    if(c.individualPaymentDate===undefined) c.individualPaymentDate='';
+    if(c.minAmount===undefined) c.minAmount=0;
+    if(c.individualPaymentTotalSpend===undefined) c.individualPaymentTotalSpend=0;
+    if(c.individualPaymentSelectedFixedItemIds===undefined) c.individualPaymentSelectedFixedItemIds=[];
+  });
+  fixedCostItems.forEach(it=>{
+    if(it.specialNotes===undefined) it.specialNotes='';
+    if(it.cardId===undefined || it.cardId===null) it.cardId='';
+    if(it.subName===undefined) it.subName='';
+    if(it.isPaid===undefined) it.isPaid=false;
+  });
+
+  try{
+    const now=new Date();
+    if(now.getDate()===1){
+      const last=localStorage.getItem('lastMonthlyReset');
+      const today=now.toDateString();
+      if(last!==today){
+        cards.forEach(c=>{ c.individualPaymentTotalSpend=0; c.individualPaymentDate=formatMD(now); });
+        fixedCostItems.forEach(it=>{ it.isPaid=false; });
+        localStorage.setItem('lastMonthlyReset',today);
+        localStorage.setItem('cardUsageData',JSON.stringify({cards,fixedCosts:fixedCostItems,nextCardId,nextItemId}));
+      }
+    }
+  }catch(e){}
+
+  currentSelectedCardIndex=0;
+  renderCardWheel();
+  renderFixedCostsTable();
+  updateAllCardResults();
+  if(!silent) alert('데이터를 불러왔습니다.');
+}
+
+const fabContainer=document.querySelector('.floating-btn-container');
+let isFabDragging=false,fabStartY=0,fabStartBottom=0;
+function onFabDragStart(e){
+  isFabDragging=false;
+  fabStartY=e.type.includes('mouse')?e.clientY:e.touches[0].clientY;
+  const cs=window.getComputedStyle(fabContainer);
+  fabStartBottom=parseInt(cs.bottom,10);
+
+  if(e.type.includes('mouse')){
+    document.addEventListener('mousemove',onFabDragMove);
+    document.addEventListener('mouseup',onFabDragEnd);
+  }else{
+    document.addEventListener('touchmove',onFabDragMove,{passive:false});
+    document.addEventListener('touchend',onFabDragEnd);
+  }
+}
+function onFabDragMove(e){
+  const y=e.type.includes('mouse')?e.clientY:e.touches[0].clientY;
+  const dy=fabStartY-y;
+  if(Math.abs(dy)>6){ isFabDragging=true; e.preventDefault(); }
+  if(!isFabDragging) return;
+  let bottom=fabStartBottom+dy;
+  const max=window.innerHeight-fabContainer.offsetHeight-20;
+  bottom=Math.max(20,Math.min(bottom,max));
+  fabContainer.style.bottom=bottom+'px';
+}
+function onFabDragEnd(e){
+  if(e.type.includes('mouse')){
+    document.removeEventListener('mousemove',onFabDragMove);
+    document.removeEventListener('mouseup',onFabDragEnd);
+  }else{
+    document.removeEventListener('touchmove',onFabDragMove);
+    document.removeEventListener('touchend',onFabDragEnd);
+  }
+  setTimeout(()=>{isFabDragging=false},50);
+}
+fabContainer.addEventListener('mousedown',onFabDragStart);
+fabContainer.addEventListener('touchstart',onFabDragStart,{passive:false});
+
+function showInlineConfirmNear(btn,msg,action){
+  inlineConfirmAction=action||null;
+  document.getElementById('inline-confirm-msg').textContent=msg;
+  const pop=document.getElementById('inline-confirm-pop');
+  const r=btn.getBoundingClientRect();
+  pop.style.display='block';
+  const box=pop.getBoundingClientRect();
+  const pad=10;
+  let x=r.right+10, y=r.top;
+  const maxX=window.innerWidth-box.width-pad;
+  const maxY=window.innerHeight-box.height-pad;
+  if(x>maxX) x=Math.max(pad,r.left-box.width-10);
+  if(y>maxY) y=Math.max(pad,r.bottom-box.height);
+  pop.style.left=Math.max(pad,Math.min(x,maxX))+'px';
+  pop.style.top=Math.max(pad,Math.min(y,maxY))+'px';
+}
+function hideInlineConfirm(){
+  document.getElementById('inline-confirm-pop').style.display='none';
+  inlineConfirmAction=null;
+}
+let inlineConfirmAction=null;
+document.getElementById('inline-confirm-ok').addEventListener('click',()=>{ if(typeof inlineConfirmAction==='function') inlineConfirmAction(); hideInlineConfirm(); });
+document.getElementById('inline-confirm-cancel').addEventListener('click',hideInlineConfirm);
+document.addEventListener('mousedown',e=>{
+  const pop=document.getElementById('inline-confirm-pop');
+  if(pop.style.display==='block' && !pop.contains(e.target)) hideInlineConfirm();
+});
+
+document.getElementById('fab-add').addEventListener('click',()=>{
+  if(isFabDragging) return;
+  if(document.getElementById('quick-check-overlay').style.display==='block'){
+    if(cards.length===0){ alert('먼저 결제 카드를 추가해주세요.'); return; }
+    fixedCostItems.push({id:generateItemId(),name:'',subName:'',amount:0,cardId:currentFixedCostFilter!=='all'?currentFixedCostFilter:cards[0].id,specialNotes:'',isPaid:false});
+    renderFixedCostsTable(); isDirty=true;
+  }else{
+    const id=generateCardId();
+    cards.push({id,name:`카드 ${cards.length+1}`,individualPaymentTotalSpend:0,individualPaymentSelectedFixedItemIds:[],individualPaymentAmount:0,individualPaymentDate:'',minAmount:0,mainBenefit:''});
+    renderCardWheel(); renderFixedCostsTable(); isDirty=true;
+  }
+});
+
+document.getElementById('fab-delete').addEventListener('click',(ev)=>{
+  if(isFabDragging) return;
+  if(document.getElementById('quick-check-overlay').style.display==='block'){
+    const ids=[];
+    document.querySelectorAll('#fixed-costs-table .select-item-checkbox:checked').forEach(x=>ids.push(x.dataset.itemId));
+    if(ids.length===0){ alert('삭제할 항목을 선택해주세요.'); return; }
+    showInlineConfirmNear(ev.currentTarget,`${ids.length}개 삭제?`,()=>{
+      fixedCostItems=fixedCostItems.filter(it=>!ids.includes(it.id));
+      renderFixedCostsTable(); updateAllCardResults(); isDirty=true;
+    });
+  }else{
+    if(cards.length===0) return;
+    const c=cards[currentSelectedCardIndex];
+    if(!c) return;
+    showInlineConfirmNear(ev.currentTarget,`'${c.name}' 삭제?`,()=>{
+      cards.splice(currentSelectedCardIndex,1);
+      fixedCostItems.forEach(it=>{ if(it.cardId===c.id) it.cardId=''; });
+      if(currentSelectedCardIndex>=cards.length) currentSelectedCardIndex=Math.max(0,cards.length-1);
+      renderCardWheel(); renderFixedCostsTable(); updateAllCardResults(); isDirty=true;
+    });
+  }
+});
+
+function createFixedRow(it){
+  const tr=document.createElement('tr');
+  tr.dataset.itemId=it.id;
+
+  let opts=`<option value="" ${it.cardId?'':'selected'}>(카드 없음)</option>`;
+  cards.forEach(c=>{ opts+=`<option value="${c.id}" ${it.cardId===c.id?'selected':''}>${c.name||c.id}</option>`; });
+
+  const amt=it.amount>0?it.amount.toLocaleString('ko-KR'):'';
+
+  tr.innerHTML=`
+    <td><input type="checkbox" class="select-item-checkbox" data-item-id="${it.id}" data-table-id="fixed-costs-table"></td>
+    <td><select class="item-card" data-item-id="${it.id}" data-table-id="fixed-costs-table">${opts}</select></td>
+    <td>
+      <div class="merged-input-box">
+        <input type="text" class="item-name auto-fit-input" value="${it.name||''}" data-item-id="${it.id}" data-table-id="fixed-costs-table" />
+        <input type="text" class="item-sub-name" value="${it.subName||''}" data-item-id="${it.id}" data-table-id="fixed-costs-table" />
+      </div>
+    </td>
+    <td><input type="text" class="item-amount auto-fit-input" value="${amt}" data-item-id="${it.id}" data-table-id="fixed-costs-table" inputmode="numeric" pattern="[0-9]*" /></td>
+    <td><textarea class="item-special-notes" data-item-id="${it.id}" data-table-id="fixed-costs-table" rows="1">${it.specialNotes||''}</textarea></td>
+    <td><input type="checkbox" class="item-paid-checkbox" data-item-id="${it.id}" ${it.isPaid?'checked':''}></td>
+  `;
+  return tr;
+}
+
+function renderFixedCostsTable(){
+  const tbody=document.querySelector('#fixed-costs-table tbody');
+  tbody.innerHTML='';
+  let list=fixedCostItems;
+  if(currentFixedCostFilter!=='all') list=list.filter(x=>x.cardId===currentFixedCostFilter);
+  list.forEach(it=>tbody.appendChild(createFixedRow(it)));
+
+  requestAnimationFrame(()=>{
+    tbody.querySelectorAll('textarea.item-special-notes').forEach(el=>setTextareaAutoFit(el,{minW:54,maxW:2400,extraW:16,minH:20}));
+    tbody.querySelectorAll('input.item-amount').forEach(el=>autoFitInputWidth(el,{minW:54,maxW:1200,extra:16}));
+    tbody.querySelectorAll('input.item-name').forEach(el=>autoFitInputWidth(el,{minW:20,maxW:1200,extra:2}));
+    tbody.querySelectorAll('input.item-sub-name').forEach(el=>autoFitInputWidth(el,{minW:20,maxW:1200,extra:2}));
+  });
+
+  updateAllCardResults();
+}
+
+document.querySelectorAll('tbody').forEach(tbody=>{
+  tbody.addEventListener('input',(ev)=>{
+    if(ev.target.type==='checkbox') return;
+    isDirty=true;
+    const itemId=ev.target.dataset.itemId;
+    if(!itemId) return;
+    const idx=fixedCostItems.findIndex(x=>x.id===itemId);
+    if(idx<0) return;
+    const it=fixedCostItems[idx];
+    if(ev.target.classList.contains('item-name')){
+      it.name=ev.target.value;
+      autoFitInputWidth(ev.target,{minW:20,maxW:1200,extra:2});
+    }else if(ev.target.classList.contains('item-sub-name')){
+      it.subName=ev.target.value;
+      autoFitInputWidth(ev.target,{minW:20,maxW:1200,extra:2});
+    }else if(ev.target.classList.contains('item-amount')){
+      formatNumberInput(ev.target);
+      it.amount=parseNumberFromFormattedString(ev.target.value);
+      autoFitInputWidth(ev.target,{minW:54,maxW:1200,extra:16});
+    }else if(ev.target.classList.contains('item-special-notes')){
+      it.specialNotes=ev.target.value;
+    }
+    updateAllCardResults();
+  });
+
+  tbody.addEventListener('change',(ev)=>{
+    isDirty=true;
+    const itemId=ev.target.dataset.itemId;
+    if(!itemId) return;
+    const idx=fixedCostItems.findIndex(x=>x.id===itemId);
+    if(idx<0) return;
+    const it=fixedCostItems[idx];
+
+    if(ev.target.classList.contains('item-card')){
+      it.cardId=ev.target.value;
+      renderFixedCostsTable();
+    }else if(ev.target.classList.contains('item-paid-checkbox')){
+      it.isPaid=ev.target.checked;
+    }
+    updateAllCardResults();
+  });
+});
+
+document.getElementById('fixed-cost-filter-sort').addEventListener('change',(ev)=>{
+  currentFixedCostFilter=ev.target.value;
+  renderFixedCostsTable();
+  updatePopupHeaderName();
+});
+
+const quickCheckOverlay=document.getElementById('quick-check-overlay');
+function openFixedCostManagerModal(cardId){
+  currentFixedCostFilter=cardId||'all';
+  updateFilterSortDropdowns();
+  document.getElementById('fixed-cost-filter-sort').value=currentFixedCostFilter;
+  updatePopupHeaderName();
+  renderFixedCostsTable();
+  
+  const topPos = getSelectionBoxBottom();
+  quickCheckOverlay.style.paddingTop = topPos + 'px';
+  
+  quickCheckOverlay.style.display='block';
+  
+  detailPanelEl.classList.add('blurred');
+  wheelContainerEl.classList.add('blurred');
+  tickerPanel.classList.add('blurred');
+}
+
+function updatePopupHeaderName(){
+  const el=document.getElementById('qc-card-name');
+  let sum = 0;
+  let title = '';
+
+  if(currentFixedCostFilter==='all'){
+    title = '전체 보기';
+    sum = fixedCostItems.reduce((a,b)=>a+(b.amount||0),0);
+  } else {
+    const c=cards.find(x=>x.id===currentFixedCostFilter);
+    title = c ? c.name : '카드 없음';
+    sum = fixedCostItems.filter(x=>x.cardId===currentFixedCostFilter).reduce((a,b)=>a+(b.amount||0),0);
+  }
+  el.innerHTML = `${title} <span style="font-size:0.9em; font-weight:normal; color:#555;">(고정비: ${formatKRWNumber(sum)}원)</span>`;
+}
+
+quickCheckOverlay.addEventListener('mousedown',e=>{ 
+  if(e.target===quickCheckOverlay) {
+    quickCheckOverlay.style.display='none';
+    detailPanelEl.classList.remove('blurred');
+    wheelContainerEl.classList.remove('blurred');
+    tickerPanel.classList.remove('blurred');
+  }
+});
+
+window.addEventListener('beforeunload',e=>{ if(isDirty){ e.preventDefault(); e.returnValue=''; } });
+
+window.addEventListener('load',()=>{
+  loadCustomSettings();
+  if(localStorage.getItem('cardUsageData')) loadData(true);
+  else{
+    renderCardWheel();
+    renderFixedCostsTable();
+    updateAllCardResults();
+    isDirty=false;
+  }
+});
+</script>
+</body>
+</html>
